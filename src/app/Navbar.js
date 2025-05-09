@@ -41,7 +41,7 @@ export default function Navbar() {
   console.log("Rendered Navbar with user:", user);
 
   return (
-    <nav className="flex gap-4 p-4 border-b">
+    <nav className="flex gap-4 p-4 border-b items-center">
       <Link href="/" className="text-blue-600 hover:underline">
         Home
       </Link>
@@ -49,8 +49,19 @@ export default function Navbar() {
         Dashboard
       </Link>
 
+      <div className="flex-grow"></div>
+
+      {user && (
+        <span className="font-semibold text-blue-700">
+          مرحباً، {user.user_metadata?.display_name || "مستخدم"}
+        </span>
+      )}
+
       {user ? (
-        <button onClick={handleLogout} className="text-red-600 hover:underline">
+        <button
+          onClick={handleLogout}
+          className="text-red-600 hover:underline ml-4"
+        >
           Logout
         </button>
       ) : (

@@ -6,6 +6,7 @@ import { supabase } from "../../supabaseClient";
 
 export default function Signup() {
   const router = useRouter();
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -16,9 +17,18 @@ export default function Signup() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    console.log("📨 Signup form submitted:", { email, password });
+    console.log("📨 Signup form submitted:", { email, password, displayName });
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    // Create user in Supabase Auth with additional metadata
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName, // Store the display name as user metadata
+        },
+      },
+    });
 
     if (error) {
       console.error("❌ Signup error:", error.message);
@@ -34,27 +44,34 @@ export default function Signup() {
       <h2 className="text-xl font-semibold mb-4">Sign Up</h2>
       <form onSubmit={handleSignup} className="space-y-4">
         <input
+          type="text"
+          placeholder="الاسم الظاهر"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          className="border w-full p-2 rounded"
+          required
+        />
+        <input
           type="email"
-          placeholder="Email"
-          className="w-full p-2 border rounded"
+          placeholder="البريد الإلكتروني"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="border w-full p-2 rounded"
           required
         />
         <input
           type="password"
-          placeholder="Password"
-          className="w-full p-2 border rounded"
+          placeholder="كلمة المرور"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="border w-full p-2 rounded"
           required
         />
-        {errorMsg && <p className="text-red-600">{errorMsg}</p>}
         <button
           type="submit"
-          className="bg-blue-600 text-white p-2 rounded w-full"
+          className="bg-blue-500 text-white px-4 py-2 rounded w-full"
         >
-          Sign Up
+          إنشاء حساب
         </button>
       </form>
     </div>

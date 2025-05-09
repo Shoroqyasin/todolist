@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
+  const [status, setStatus] = useState("todo");
 
   useEffect(() => {
     const getUserAndTasks = async () => {
@@ -24,17 +25,41 @@ export default function Dashboard() {
   }, []);
 
   const fetchTasks = async (userId) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Check if the user is an admin by querying the admins table
+    const { data: adminData, error: adminError } = await supabase
+      .from("admins")
+      .select("*")
+      .eq("user_id", userId)
+      .single(); // Expecting a single row
+
+    const isAdmin = !adminError && adminData !== null; // If no error and adminData is not null, the user is an admin
+
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
-      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (!error) setTasks(data);
-  };
+    if (isAdmin) {
+      // If admin, set all tasks
+      setTasks(data);
+    } else {
+      // If not admin, filter tasks by user_id
+      const userTasks = data.filter((task) => task.user_id === userId);
+      setTasks(userTasks);
+    }
 
+    // Handle errors
+    if (error) {
+      setError(error.message);
+    }
+  };
   const handleAddTask = async (e) => {
     e.preventDefault();
+
     if (!title.trim() || !description.trim()) return;
 
     const { error } = await supabase.from("tasks").insert([
@@ -42,6 +67,8 @@ export default function Dashboard() {
         title,
         description,
         user_id: user.id,
+        user_display_name: user.user_metadata.display_name,
+        status,
       },
     ]);
 
@@ -58,11 +85,13 @@ export default function Dashboard() {
   // وظيفة تعديل المهمة
   const handleEditTask = async (e) => {
     e.preventDefault();
+    console.log("add mode");
+
     if (!title.trim() || !description.trim()) return;
 
     const { error } = await supabase
       .from("tasks")
-      .update({ title, description })
+      .update({ title, description, status })
       .eq("id", editingTaskId);
 
     if (error) {
@@ -71,9 +100,17 @@ export default function Dashboard() {
       setEditingTaskId(null); // إلغاء وضع التعديل
       setTitle("");
       setDescription("");
+      setStatus(tasks.status);
       setError(null);
       fetchTasks(user.id); // تحديث قائمة المهام
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTaskId(null);
+    setTitle("");
+    setDescription("");
+    setStatus("todo"); // Reset to default status
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -115,7 +152,7 @@ export default function Dashboard() {
           </button>
           <button
             type="button"
-            onClick={() => setEditingTaskId(null)}
+            onClick={handleCancelEdit}
             className="bg-gray-500 text-white px-4 py-2 rounded"
           >
             إلغاء التعديل
@@ -136,6 +173,15 @@ export default function Dashboard() {
             onChange={(e) => setDescription(e.target.value)}
             className="border w-full p-2 rounded"
           ></textarea>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="border w-full p-2 rounded"
+          >
+            <option value="todo">📝 To Do</option>
+            <option value="in_progress">🚧 In Progress</option>
+            <option value="done">✅ Done</option>
+          </select>
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -154,6 +200,17 @@ export default function Dashboard() {
               <div>
                 <h3 className="font-semibold">{task.title}</h3>
                 <p className="text-gray-600">{task.description}</p>
+                <p className="mt-1 text-sm text-gray-700">
+                  <strong>الحالة:</strong>{" "}
+                  {task.status === "todo"
+                    ? "📝 قيد التنفيذ"
+                    : task.status === "in_progress"
+                    ? "🚧 جاري العمل"
+                    : "✅ مكتملة"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  بواسطة: {task.user_display_name || "مستخدم مجهول"}
+                </p>
               </div>
               <div className="space-x-2">
                 <button

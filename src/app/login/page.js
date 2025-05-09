@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../supabaseClient";
+import Link from "next/link";
+import ResetPassword from "./updatepassword/page";
 
 export default function Login() {
   const router = useRouter();
@@ -60,6 +62,11 @@ export default function Login() {
           Log In
         </button>
       </form>
+      <p className="text-sm text-right mt-2">
+        <Link href="/login/updatepassword">
+          <>هل نسيت كلمة المرور؟</>
+        </Link>
+      </p>
     </div>
   );
 }
