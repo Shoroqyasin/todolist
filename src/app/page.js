@@ -112,7 +112,7 @@ export default function Home() {
     };
     getSessionAndUser();
     setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  }, []);
+  }, [quotes]);
 
   return (
     <div className="min-h-screen w-full bg-gray-100">
