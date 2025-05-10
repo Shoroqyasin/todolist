@@ -116,7 +116,7 @@ export default function Home() {
   }, []); // Empty dependency array means this only runs once
 
   return (
-    <div className="min-h-screen w-full bg-gray-100">
+    <div className="min-h-screen w-full bg-gray-100 mt-16">
       {/* Main Content */}
       <div className="max-w-5xl mx-auto py-12 px-8">
         {!session ? (

@@ -155,7 +155,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-gray-100 min-h-screen">
+    <div className="max-w-4xl mx-auto p-8 bg-gray-100 min-h-screen mt-16">
       <h1 className="text-4xl font-bold text-center text-blue-900 mb-10">
         Task Dashboard
       </h1>
