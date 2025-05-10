@@ -104,7 +104,6 @@ export default function Dashboard() {
 
   const handleEditTask = async (e) => {
     e.preventDefault();
-
     if (!title.trim() || !description.trim()) return;
 
     const { error } = await supabase
@@ -157,7 +156,7 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-4xl font-bold text-center text-blue-600 mb-10">
+      <h1 className="text-4xl font-bold text-center text-blue-900 mb-10">
         Task Dashboard
       </h1>
 
@@ -273,8 +272,9 @@ export default function Dashboard() {
                       setTitle(task.title);
                       setDescription(task.description);
                       setStatus(task.status);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className="text-blue-600 hover:underline transition"
+                    className="text-blue-900 hover:underline transition"
                   >
                     Edit
                   </button>

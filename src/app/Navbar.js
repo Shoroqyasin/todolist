@@ -37,7 +37,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">
+    <nav className="fixed top-0 left-0 w-full bg-white shadow-md py-4 px-6 flex items-center justify-between z-50">
       {/* Logo */}
       <Link
         href="/"
