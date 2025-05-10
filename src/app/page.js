@@ -95,24 +95,24 @@ export default function Home() {
     setAnalyzing(false);
   };
 
-  // Inspirational quotes
-  const quotes = [
-    "Stay focused and never give up.",
-    "Today is a new chance to grow.",
-    "Small steps every day lead to big changes.",
-    "Discipline is the bridge between goals and accomplishment.",
-    "You are capable of amazing things.",
-  ];
-
-  // Load session data and set random quote on mount
   useEffect(() => {
+    const quotes = [
+      "Stay focused and never give up.",
+      "Today is a new chance to grow.",
+      "Small steps every day lead to big changes.",
+      "Discipline is the bridge between goals and accomplishment.",
+      "You are capable of amazing things.",
+    ];
+
+    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+
     const getSessionAndUser = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       setSession(sessionData.session);
     };
+
     getSessionAndUser();
-    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  }, [quotes]);
+  }, []); // Empty dependency array means this only runs once
 
   return (
     <div className="min-h-screen w-full bg-gray-100">
