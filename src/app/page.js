@@ -147,7 +147,7 @@ export default function Home() {
                   <div className="text-lg text-gray-700 mb-4">
                     {quote && (
                       <blockquote className="italic text-gray-600 mb-4 border-l-4 border-blue-900 pl-4 py-2">
-                        "{quote}"
+                        &quot;{quote}&quot;
                       </blockquote>
                     )}
                   </div>
@@ -163,7 +163,7 @@ export default function Home() {
             {/* Task Focus Section */}
             <div className="bg-white rounded-lg shadow-md p-8 mb-8">
               <h2 className="text-2xl font-bold text-blue-900 mb-6">
-                🎯 WHAT'S YOUR FOCUS FOR TODAY?
+                🎯 WHAT&apos;S YOUR FOCUS FOR TODAY?
               </h2>
 
               <div className="mb-6">
