@@ -4,6 +4,7 @@ import * as toxicity from "@tensorflow-models/toxicity";
 import "@tensorflow/tfjs";
 import { supabase } from "../supabaseClient";
 import { negativeKeywords, positiveKeywords } from "../../sentimentKeywords";
+import Link from "next/link";
 
 export default function Home() {
   // State variables
@@ -120,15 +121,20 @@ export default function Home() {
       <div className="max-w-5xl mx-auto py-12 px-8">
         {!session ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <h2 className="text-3xl font-bold text-blue-900 mb-4">
-              Welcome to Todo App
-            </h2>
-            <div className="text-gray-600 text-lg mb-6">
-              Please log in to continue and manage your tasks.
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <h2 className="text-3xl font-bold text-blue-900 mb-4">
+                Welcome to Todo App
+              </h2>
+              <div className="text-gray-600 text-lg mb-6">
+                Please log in to continue and manage your tasks.
+              </div>
+              <Link
+                href="/login"
+                className="bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-blue-800 transition"
+              >
+                Login to Continue
+              </Link>
             </div>
-            <button className="bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-blue-800 transition">
-              Login to Continue
-            </button>
           </div>
         ) : (
           <>
