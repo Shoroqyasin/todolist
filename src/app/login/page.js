@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../supabaseClient";
 import Link from "next/link";
-import ResetPassword from "./updatepassword/page";
 
 export default function Login() {
   const router = useRouter();
@@ -14,7 +13,7 @@ export default function Login() {
 
   useEffect(() => {
     console.log("🔁 Login component rendered");
-  });
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -35,38 +34,47 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 border rounded">
-      <h2 className="text-xl font-semibold mb-4">Login</h2>
-      <form onSubmit={handleLogin} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full p-2 border rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full p-2 border rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        {errorMsg && <p className="text-red-600">{errorMsg}</p>}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white p-2 rounded w-full"
-        >
-          Log In
-        </button>
-      </form>
-      <p className="text-sm text-right mt-2">
-        <Link href="/login/updatepassword">
-          <>هل نسيت كلمة المرور؟</>
-        </Link>
-      </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-3xl font-bold text-center text-blue-600 mb-6">
+          Login
+        </h2>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          {errorMsg && (
+            <p className="text-red-600 text-sm text-center">{errorMsg}</p>
+          )}
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg hover:bg-blue-700 transition"
+          >
+            Log In
+          </button>
+        </form>
+        <div className="text-center mt-4">
+          <Link
+            href="/login/updatepassword"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Forgot your password?
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

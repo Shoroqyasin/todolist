@@ -12,9 +12,11 @@
     "@supabase/supabase-js": "^2.49.4",
     "@tensorflow-models/toxicity": "^1.2.2",
     "@tensorflow/tfjs": "^4.22.0",
+    "encoding": "^0.1.13",
     "next": "15.3.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-loading-skeleton": "^3.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

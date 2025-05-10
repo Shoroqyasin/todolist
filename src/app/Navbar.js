@@ -6,73 +6,208 @@ import { supabase } from "../supabaseClient";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true); // State to track loading
+  const [error, setError] = useState(null); // State for any errors
 
   useEffect(() => {
-    console.log("Navbar mounted");
-
     const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      console.log("getUser response:", data, "error:", error);
-      setUser(data?.user ?? null);
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.getUser();
+        if (error) throw error; // Handle error if any
+        setUser(data?.user ?? null);
+      } catch (err) {
+        setError("Failed to load user data");
+        console.error("Error fetching user:", err);
+      } finally {
+        setLoading(false); // Done loading
+      }
     };
 
     getUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth event:", event, "Session:", session);
+      (_event, session) => {
         setUser(session?.user ?? null);
       }
     );
 
     return () => {
-      console.log("Navbar unmounted, cleaning up subscription");
       authListener.subscription.unsubscribe();
     };
   }, []);
 
   const handleLogout = async () => {
-    console.log("Logging out...");
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error("Logout error:", error);
-    else console.log("Logged out successfully");
+    await supabase.auth.signOut();
+    setIsMenuOpen(false);
   };
 
-  console.log("Rendered Navbar with user:", user);
+  if (loading) {
+    return (
+      <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">
+        {/* Loading state */}
+        <div className="flex items-center">
+          <div className="spinner-border animate-spin h-5 w-5 border-t-4 border-blue-900 border-solid rounded-full" />
+        </div>
+      </nav>
+    );
+  }
+
+  if (error) {
+    return (
+      <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">
+        {/* Error state */}
+        <div className="text-red-600 font-medium">Error: {error}</div>
+      </nav>
+    );
+  }
 
   return (
-    <nav className="flex gap-4 p-4 border-b items-center">
-      <Link href="/" className="text-blue-600 hover:underline">
-        Home
-      </Link>
-      <Link href="/dashboard" className="text-blue-600 hover:underline">
-        Dashboard
-      </Link>
-
-      <div className="flex-grow"></div>
-
-      {user && (
-        <span className="font-semibold text-blue-700">
-          مرحباً، {user.user_metadata?.display_name || "مستخدم"}
+    <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">
+      {/* Logo */}
+      <Link
+        href="/"
+        className="flex items-center text-blue-900 font-bold text-2xl"
+      >
+        <span className="border-2 border-blue-900 rounded-full p-1 mr-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
         </span>
-      )}
+        <div className="flex flex-col leading-tight">
+          <span className="text-sm">Innovation</span>
+          <span className="text-lg">Universe</span>
+        </div>
+      </Link>
 
-      {user ? (
-        <button
-          onClick={handleLogout}
-          className="text-red-600 hover:underline ml-4"
+      {/* Desktop Navigation */}
+      <div className="hidden md:flex items-center space-x-6">
+        <Link href="/" className="text-blue-900 font-medium hover:underline">
+          HOME
+        </Link>
+        <Link
+          href="/dashboard"
+          className="text-blue-900 font-medium hover:underline"
         >
-          Logout
+          DASHBOARD
+        </Link>
+      </div>
+
+      {/* Desktop Auth */}
+      <div className="hidden md:flex items-center space-x-4">
+        {user && (
+          <span className="font-medium text-blue-900">
+            مرحباً، {user.user_metadata?.display_name || "مستخدم"}
+          </span>
+        )}
+
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              className="text-blue-900 hover:text-blue-700 font-medium"
+            >
+              LOGIN
+            </Link>
+            <Link
+              href="/signup"
+              className="bg-blue-900 text-white px-4 py-1 rounded hover:bg-blue-800 transition"
+            >
+              SIGNUP
+            </Link>
+          </>
+        )}
+      </div>
+
+      {/* Mobile Menu Button */}
+      <div className="md:hidden">
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="text-blue-900 focus:outline-none"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
         </button>
-      ) : (
-        <>
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Login
+      </div>
+
+      {/* Mobile Dropdown */}
+      {isMenuOpen && (
+        <div className="absolute top-full right-4 mt-2 w-48 bg-white rounded-md shadow-lg py-2 md:hidden">
+          <Link
+            href="/"
+            className="block px-4 py-2 text-blue-900 hover:bg-blue-100"
+          >
+            HOME
           </Link>
-          <Link href="/signup" className="text-blue-600 hover:underline">
-            Signup
+          <Link
+            href="/dashboard"
+            className="block px-4 py-2 text-blue-900 hover:bg-blue-100"
+          >
+            DASHBOARD
           </Link>
-        </>
+
+          <div className="border-t border-gray-200 my-2" />
+
+          {user ? (
+            <>
+              <div className="px-4 py-2 text-blue-900 font-medium">
+                مرحباً، {user.user_metadata?.display_name || "مستخدم"}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+              >
+                LOGOUT
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="block px-4 py-2 text-blue-900 hover:bg-blue-100"
+              >
+                LOGIN
+              </Link>
+              <Link
+                href="/signup"
+                className="block px-4 py-2 text-blue-900 hover:bg-blue-100"
+              >
+                SIGNUP
+              </Link>
+            </>
+          )}
+        </div>
       )}
     </nav>
   );

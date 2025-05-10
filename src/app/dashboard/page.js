@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("todo");
+  const [loading, setLoading] = useState(true); // Loading state
 
   useEffect(() => {
     const getUserAndTasks = async () => {
@@ -29,14 +30,13 @@ export default function Dashboard() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Check if the user is an admin by querying the admins table
     const { data: adminData, error: adminError } = await supabase
       .from("admins")
       .select("*")
       .eq("user_id", userId)
-      .single(); // Expecting a single row
+      .single();
 
-    const isAdmin = !adminError && adminData !== null; // If no error and adminData is not null, the user is an admin
+    const isAdmin = !adminError && adminData !== null;
 
     const { data, error } = await supabase
       .from("tasks")
@@ -44,19 +44,19 @@ export default function Dashboard() {
       .order("created_at", { ascending: false });
 
     if (isAdmin) {
-      // If admin, set all tasks
       setTasks(data);
     } else {
-      // If not admin, filter tasks by user_id
       const userTasks = data.filter((task) => task.user_id === userId);
       setTasks(userTasks);
     }
 
-    // Handle errors
     if (error) {
       setError(error.message);
     }
+
+    setLoading(false); // Set loading to false when data is fetched
   };
+
   const handleAddTask = async (e) => {
     e.preventDefault();
 
@@ -82,10 +82,8 @@ export default function Dashboard() {
     }
   };
 
-  // وظيفة تعديل المهمة
   const handleEditTask = async (e) => {
     e.preventDefault();
-    console.log("add mode");
 
     if (!title.trim() || !description.trim()) return;
 
@@ -97,12 +95,12 @@ export default function Dashboard() {
     if (error) {
       setError(error.message);
     } else {
-      setEditingTaskId(null); // إلغاء وضع التعديل
+      setEditingTaskId(null);
       setTitle("");
       setDescription("");
-      setStatus(tasks.status);
+      setStatus("todo");
       setError(null);
-      fetchTasks(user.id); // تحديث قائمة المهام
+      fetchTasks(user.id);
     }
   };
 
@@ -110,7 +108,7 @@ export default function Dashboard() {
     setEditingTaskId(null);
     setTitle("");
     setDescription("");
-    setStatus("todo"); // Reset to default status
+    setStatus("todo");
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -124,59 +122,86 @@ export default function Dashboard() {
     }
   };
 
-  return (
-    <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">لوحة المهام</h1>
+  const SkeletonLoader = () => (
+    <div className="space-y-6">
+      {[...Array(3)].map((_, index) => (
+        <div
+          key={index}
+          className="bg-white p-6 rounded-lg shadow-lg animate-pulse"
+        >
+          <div className="h-6 bg-gray-300 rounded mb-4"></div>
+          <div className="h-4 bg-gray-300 rounded mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded mb-2"></div>
+        </div>
+      ))}
+    </div>
+  );
 
-      {/* إذا كان في وضع تعديل */}
+  return (
+    <div className="max-w-4xl mx-auto p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-4xl font-bold text-center text-blue-600 mb-10">
+        Task Dashboard
+      </h1>
+
       {editingTaskId ? (
-        <form onSubmit={handleEditTask} className="space-y-4 mb-6">
+        <form onSubmit={handleEditTask} className="space-y-6 mb-8">
           <input
             type="text"
-            placeholder="عنوان المهمة"
+            placeholder="Task Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border w-full p-2 rounded"
+            className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
           />
           <textarea
-            placeholder="وصف المهمة"
+            placeholder="Task Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="border w-full p-2 rounded"
-          ></textarea>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            حفظ التعديلات
-          </button>
-          <button
-            type="button"
-            onClick={handleCancelEdit}
-            className="bg-gray-500 text-white px-4 py-2 rounded"
-          >
-            إلغاء التعديل
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={handleAddTask} className="space-y-4 mb-6">
-          <input
-            type="text"
-            placeholder="عنوان المهمة"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="border w-full p-2 rounded"
-          />
-          <textarea
-            placeholder="وصف المهمة"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="border w-full p-2 rounded"
+            className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
           ></textarea>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="border w-full p-2 rounded"
+            className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
+          >
+            <option value="todo">📝 To Do</option>
+            <option value="in_progress">🚧 In Progress</option>
+            <option value="done">✅ Done</option>
+          </select>
+          <div className="flex justify-between items-center">
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition"
+            >
+              Save Changes
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="bg-gray-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-gray-600 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleAddTask} className="space-y-6 mb-10">
+          <input
+            type="text"
+            placeholder="Task Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
+          />
+          <textarea
+            placeholder="Task Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
+          ></textarea>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
           >
             <option value="todo">📝 To Do</option>
             <option value="in_progress">🚧 In Progress</option>
@@ -184,59 +209,70 @@ export default function Dashboard() {
           </select>
           <button
             type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-green-600 text-white px-8 py-3 rounded-lg shadow-md hover:bg-green-700 transition"
           >
-            إضافة مهمة
+            Add Task
           </button>
         </form>
       )}
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
-      <ul className="space-y-2">
-        {tasks.map((task) => (
-          <li key={task.id} className="border p-4 rounded shadow ">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold">{task.title}</h3>
-                <p className="text-gray-600">{task.description}</p>
-                <p className="mt-1 text-sm text-gray-700">
-                  <strong>الحالة:</strong>{" "}
-                  {task.status === "todo"
-                    ? "📝 قيد التنفيذ"
-                    : task.status === "in_progress"
-                    ? "🚧 جاري العمل"
-                    : "✅ مكتملة"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  بواسطة: {task.user_display_name || "مستخدم مجهول"}
-                </p>
+      {/* Render Skeleton Loader or Task List */}
+      {loading ? (
+        <SkeletonLoader />
+      ) : (
+        <ul className="space-y-6">
+          {tasks.map((task) => (
+            <li
+              key={task.id}
+              className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-2xl text-gray-800">
+                    {task.title}
+                  </h3>
+                  <p className="text-gray-600">{task.description}</p>
+                  <p className="mt-2 text-sm text-gray-700">
+                    <strong>Status:</strong>{" "}
+                    {task.status === "todo"
+                      ? "📝 To Do"
+                      : task.status === "in_progress"
+                      ? "🚧 In Progress"
+                      : "✅ Done"}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    by: {task.user_display_name || "Unknown User"}
+                  </p>
+                </div>
+                <div className="space-x-4">
+                  <button
+                    onClick={() => {
+                      setEditingTaskId(task.id);
+                      setTitle(task.title);
+                      setDescription(task.description);
+                      setStatus(task.status);
+                    }}
+                    className="text-blue-600 hover:underline transition"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="text-red-600 hover:underline transition"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className="space-x-2">
-                <button
-                  onClick={() => {
-                    setEditingTaskId(task.id); // تحديد المهمة التي سيتم تعديلها
-                    setTitle(task.title); // تعبئة العنوان في النموذج
-                    setDescription(task.description); // تعبئة الوصف في النموذج
-                  }}
-                  className="text-blue-500 hover:underline"
-                >
-                  تعديل
-                </button>
-                <button
-                  onClick={() => handleDeleteTask(task.id)}
-                  className="text-red-500 hover:underline"
-                >
-                  حذف
-                </button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
 
-      {tasks.length === 0 && (
-        <p className="text-gray-500 mt-4">لا توجد مهام حالياً.</p>
+      {tasks.length === 0 && !loading && (
+        <p className="text-center text-gray-500 mt-10">No tasks available.</p>
       )}
     </div>
   );
