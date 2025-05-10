@@ -7,21 +7,14 @@ import { supabase } from "../supabaseClient";
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(true); // State to track loading
-  const [error, setError] = useState(null); // State for any errors
 
   useEffect(() => {
     const getUser = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase.auth.getUser();
-        if (error) throw error; // Handle error if any
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error);
+      } else {
         setUser(data?.user ?? null);
-      } catch (err) {
-        setError("Failed to load user data");
-        console.error("Error fetching user:", err);
-      } finally {
-        setLoading(false); // Done loading
       }
     };
 
@@ -42,26 +35,6 @@ export default function Navbar() {
     await supabase.auth.signOut();
     setIsMenuOpen(false);
   };
-
-  if (loading) {
-    return (
-      <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">
-        {/* Loading state */}
-        <div className="flex items-center">
-          <div className="spinner-border animate-spin h-5 w-5 border-t-4 border-blue-900 border-solid rounded-full" />
-        </div>
-      </nav>
-    );
-  }
-
-  if (error) {
-    return (
-      <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">
-        {/* Error state */}
-        <div className="text-red-600 font-medium">Error: {error}</div>
-      </nav>
-    );
-  }
 
   return (
     <nav className="bg-white shadow-md py-4 px-6 flex items-center justify-between relative z-50">

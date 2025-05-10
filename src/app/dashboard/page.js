@@ -14,6 +14,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true); // Loading state
 
   useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        // Handle the case where the user is not authenticated
+        console.error("User not authenticated:", error);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Proceed with fetching user-specific data
+      setUser(user);
+      setLoading(false);
+    };
+
+    fetchUser();
     const getUserAndTasks = async () => {
       const {
         data: { user },
@@ -122,16 +142,14 @@ export default function Dashboard() {
     }
   };
 
+  // Skeleton loader component
   const SkeletonLoader = () => (
-    <div className="space-y-6">
-      {[...Array(3)].map((_, index) => (
-        <div
-          key={index}
-          className="bg-white p-6 rounded-lg shadow-lg animate-pulse"
-        >
-          <div className="h-6 bg-gray-300 rounded mb-4"></div>
-          <div className="h-4 bg-gray-300 rounded mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded mb-2"></div>
+    <div className="space-y-4">
+      {[...Array(5)].map((_, index) => (
+        <div key={index} className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+          <div className="h-6 bg-gray-300 rounded w-2/4"></div>
         </div>
       ))}
     </div>
@@ -218,9 +236,11 @@ export default function Dashboard() {
 
       {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
-      {/* Render Skeleton Loader or Task List */}
+      {/* Render Skeleton or Task List */}
       {loading ? (
         <SkeletonLoader />
+      ) : tasks.length === 0 ? (
+        <p className="text-center text-gray-500 mt-10">No tasks available.</p>
       ) : (
         <ul className="space-y-6">
           {tasks.map((task) => (
@@ -269,10 +289,6 @@ export default function Dashboard() {
             </li>
           ))}
         </ul>
-      )}
-
-      {tasks.length === 0 && !loading && (
-        <p className="text-center text-gray-500 mt-10">No tasks available.</p>
       )}
     </div>
   );

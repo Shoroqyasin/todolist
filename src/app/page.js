@@ -4,7 +4,6 @@ import * as toxicity from "@tensorflow-models/toxicity";
 import "@tensorflow/tfjs";
 import { supabase } from "../supabaseClient";
 import { negativeKeywords, positiveKeywords } from "../../sentimentKeywords";
-import Skeleton from "react-loading-skeleton"; // Import Skeleton
 
 export default function Home() {
   // State variables
@@ -141,27 +140,21 @@ export default function Home() {
 
               <div className="flex flex-col md:flex-row gap-8 items-center">
                 {/* Left side - illustration */}
-                <div className="md:w-1/3">
-                  <Skeleton height={200} width={200} />
-                </div>
+                <div className="md:w-1/3">{/* Removed Skeleton here */}</div>
 
                 {/* Right side - text content */}
                 <div className="md:w-2/3">
                   <div className="text-lg text-gray-700 mb-4">
-                    {quote ? (
+                    {quote && (
                       <blockquote className="italic text-gray-600 mb-4 border-l-4 border-blue-900 pl-4 py-2">
                         "{quote}"
                       </blockquote>
-                    ) : (
-                      <Skeleton height={30} />
                     )}
                   </div>
                   <p className="text-gray-700">
-                    {quote ? (
-                      "Our advanced AI helps you manage your tasks while providing motivation and support tailored to your mood and needs."
-                    ) : (
-                      <Skeleton height={20} />
-                    )}
+                    {quote
+                      ? "Our advanced AI helps you manage your tasks while providing motivation and support tailored to your mood and needs."
+                      : ""}
                   </p>
                 </div>
               </div>
@@ -185,29 +178,16 @@ export default function Home() {
                   onClick={handleAnalyzeClick}
                   className="mt-4 bg-blue-900 text-white px-6 py-3 rounded-md hover:bg-blue-800 transition w-full md:w-auto"
                 >
-                  {analyzing ? (
-                    <Skeleton width={100} height={20} />
-                  ) : (
-                    "Analyze Input"
-                  )}
+                  {analyzing ? "Analyzing..." : "Analyze Input"}
                 </button>
               </div>
 
-              {/* Mood Selection */}
-              <div className="mt-8">
-                <h3 className="text-xl font-semibold text-blue-900 mb-4">
-                  😊 HOW ARE YOU FEELING TODAY?
-                </h3>
-              </div>
-
               {/* AI Response Section */}
-              {aiResponse ? (
+              {aiResponse && (
                 <div className="mt-8 p-6 rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-lg">
                   <h3 className="text-xl font-bold mb-3">Our RESPONSE:</h3>
                   <p className="text-lg">{aiResponse}</p>
                 </div>
-              ) : (
-                <Skeleton height={80} />
               )}
             </div>
           </>
