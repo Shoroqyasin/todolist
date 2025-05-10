@@ -130,7 +130,7 @@ export default function Home() {
               type="text"
               value={focus}
               onChange={(e) => setFocus(e.target.value)}
-              placeholder="E.g., Study for exam"
+              placeholder="Study for exam"
               className="w-full p-3 mt-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
             />
             <button
