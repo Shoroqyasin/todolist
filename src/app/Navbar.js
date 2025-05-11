@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../supabaseClient";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const getUser = async () => {
@@ -67,12 +69,24 @@ export default function Navbar() {
 
       {/* Desktop Navigation */}
       <div className="hidden md:flex items-center space-x-6">
-        <Link href="/" className="text-blue-900 font-medium hover:underline">
+        <Link
+          href="/"
+          className={`${
+            pathname === "/"
+              ? "bg-blue-700 text-white font-bold px-4 py-1 rounded "
+              : "text-blue-900"
+          } font-medium hover:underline`}
+        >
           HOME
         </Link>
+
         <Link
           href="/dashboard"
-          className="text-blue-900 font-medium hover:underline"
+          className={`${
+            pathname === "/dashboard"
+              ? "bg-blue-700 text-white font-bold px-4 py-1 rounded"
+              : "text-blue-900"
+          } font-medium hover:underline`}
         >
           DASHBOARD
         </Link>
