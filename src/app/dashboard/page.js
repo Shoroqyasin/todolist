@@ -3,6 +3,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabaseClient";
 
+// Skeleton loader component
+const SkeletonLoader = () => (
+  <div className="space-y-4">
+    {[...Array(5)].map((_, index) => (
+      <div key={index} className="animate-pulse">
+        <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
+        <div className="h-6 bg-gray-300 rounded w-2/4"></div>
+      </div>
+    ))}
+  </div>
+);
+
 export default function Dashboard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -12,82 +25,147 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("todo");
   const [loading, setLoading] = useState(true); // Loading state
+  const [allUsers, setAllUsers] = useState([]); // All users (for admin dropdown)
+  const [assignedUserId, setAssignedUserId] = useState(""); // Selected user ID (for admin)
+  const [isAdmin, setIsAdmin] = useState(false); // Track if the user is admin
 
+  // Fetch all users for admin dropdown when isAdmin changes
   useEffect(() => {
-    const fetchUser = async () => {
+    if (!isAdmin) return;
+
+    fetch("/api/users")
+      .then((res) => res.json())
+      .then((data) => {
+        setAllUsers(data.users || []);
+        // Set default assigned user to current user if possible
+        if (data.users && data.users.length > 0) {
+          setAssignedUserId(data.users[0].id);
+        }
+      })
+      .catch(console.error);
+  }, [isAdmin]);
+
+  // Fetch logged in user and tasks
+  useEffect(() => {
+    const fetchUserAndTasks = async () => {
+      setLoading(true);
       const {
         data: { user },
         error,
       } = await supabase.auth.getUser();
 
       if (error || !user) {
-        // Handle the case where the user is not authenticated
         console.error("User not authenticated:", error);
         setUser(null);
         setLoading(false);
         return;
       }
 
-      // Proceed with fetching user-specific data
       setUser(user);
+
+      // Check admin status and fetch tasks accordingly
+      const { data: adminData, error: adminError } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      const admin = !adminError && adminData !== null;
+      setIsAdmin(admin);
+
+      // Fetch tasks based on admin or normal user
+      const { data: taskData, error: taskError } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (taskError) {
+        setError(taskError.message);
+      } else {
+        if (admin) {
+          setTasks(taskData);
+        } else {
+          setTasks(taskData.filter((t) => t.user_id === user.id));
+        }
+      }
       setLoading(false);
     };
 
-    fetchUser();
-    const getUserAndTasks = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) fetchTasks(user.id);
-    };
-
-    getUserAndTasks();
+    fetchUserAndTasks();
   }, []);
 
-  const fetchTasks = async (userId) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  // Fetch tasks helper for refreshing after CRUD operations
+  const fetchTasks = async () => {
+    if (!user) return;
+
+    setLoading(true);
 
     const { data: adminData, error: adminError } = await supabase
       .from("admins")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single();
 
-    const isAdmin = !adminError && adminData !== null;
+    const admin = !adminError && adminData !== null;
+    setIsAdmin(admin);
+
+    if (admin) {
+      // fetch all users for admin dropdown as well
+      fetch("/api/users")
+        .then((res) => res.json())
+        .then((data) => {
+          setAllUsers(data.users || []);
+          if (data.users && data.users.length > 0 && !assignedUserId) {
+            setAssignedUserId(data.users[0].id);
+          }
+        })
+        .catch(console.error);
+    }
 
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (isAdmin) {
-      setTasks(data);
-    } else {
-      const userTasks = data.filter((task) => task.user_id === userId);
-      setTasks(userTasks);
-    }
-
     if (error) {
       setError(error.message);
+      setLoading(false);
+      return;
     }
 
-    setLoading(false); // Set loading to false when data is fetched
+    if (admin) {
+      setTasks(data);
+    } else {
+      setTasks(data.filter((task) => task.user_id === user.id));
+    }
+
+    setLoading(false);
   };
 
+  // Handle add task
   const handleAddTask = async (e) => {
     e.preventDefault();
-
     if (!title.trim() || !description.trim()) return;
+
+    // Determine user ID and display name for the task
+    let taskUserId = user.id;
+    let taskUserDisplayName = user.user_metadata?.display_name || "Unknown";
+
+    if (isAdmin && assignedUserId) {
+      taskUserId = assignedUserId;
+      // Find user display name from allUsers list
+      const assignedUser = allUsers.find((u) => u.id === assignedUserId);
+      taskUserDisplayName = assignedUser
+        ? assignedUser.display_name
+        : "Unknown";
+    }
 
     const { error } = await supabase.from("tasks").insert([
       {
         title,
         description,
-        user_id: user.id,
-        user_display_name: user.user_metadata.display_name,
+        user_id: taskUserId,
+        user_display_name: taskUserDisplayName,
         status,
       },
     ]);
@@ -97,11 +175,13 @@ export default function Dashboard() {
     } else {
       setTitle("");
       setDescription("");
+      setStatus("todo");
       setError(null);
-      fetchTasks(user.id);
+      fetchTasks();
     }
   };
 
+  // Handle edit task
   const handleEditTask = async (e) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
@@ -119,7 +199,7 @@ export default function Dashboard() {
       setDescription("");
       setStatus("todo");
       setError(null);
-      fetchTasks(user.id);
+      fetchTasks();
     }
   };
 
@@ -130,6 +210,7 @@ export default function Dashboard() {
     setStatus("todo");
   };
 
+  // Handle delete task
   const handleDeleteTask = async (taskId) => {
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
 
@@ -137,22 +218,9 @@ export default function Dashboard() {
       setError(error.message);
     } else {
       setError(null);
-      fetchTasks(user.id);
+      fetchTasks();
     }
   };
-
-  // Skeleton loader component
-  const SkeletonLoader = () => (
-    <div className="space-y-4">
-      {[...Array(5)].map((_, index) => (
-        <div key={index} className="animate-pulse">
-          <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/2 mb-2"></div>
-          <div className="h-6 bg-gray-300 rounded w-2/4"></div>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="max-w-4xl mx-auto p-8 bg-gray-100 min-h-screen mt-16">
@@ -224,6 +292,22 @@ export default function Dashboard() {
             <option value="in_progress">🚧 In Progress</option>
             <option value="done">✅ Done</option>
           </select>
+
+          {/* Admin user assignment dropdown */}
+          {isAdmin && (
+            <select
+              value={assignedUserId}
+              onChange={(e) => setAssignedUserId(e.target.value)}
+              className="border border-gray-300 w-full p-4 rounded-lg shadow-lg focus:ring-2 focus:ring-blue-400 text-lg"
+            >
+              {allUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.display_name || u.email || "Unknown User"}
+                </option>
+              ))}
+            </select>
+          )}
+
           <button
             type="submit"
             className="bg-green-600 text-white px-8 py-3 rounded-lg shadow-md hover:bg-green-700 transition"
@@ -235,7 +319,6 @@ export default function Dashboard() {
 
       {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
-      {/* Render Skeleton or Task List */}
       {loading ? (
         <SkeletonLoader />
       ) : tasks.length === 0 ? (
@@ -261,11 +344,11 @@ export default function Dashboard() {
                       ? "🚧 In Progress"
                       : "✅ Done"}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    by: {task.user_display_name || "Unknown User"}
+                  <p className="mt-1 text-sm text-gray-500">
+                    <em>Assigned to: {task.user_display_name || "Unknown"}</em>
                   </p>
                 </div>
-                <div className="space-x-4">
+                <div className="flex space-x-4">
                   <button
                     onClick={() => {
                       setEditingTaskId(task.id);
@@ -274,13 +357,13 @@ export default function Dashboard() {
                       setStatus(task.status);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className="text-blue-900 hover:underline transition"
+                    className="bg-yellow-400 text-white px-4 py-2 rounded hover:bg-yellow-500 transition"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteTask(task.id)}
-                    className="text-red-600 hover:underline transition"
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
                   >
                     Delete
                   </button>
