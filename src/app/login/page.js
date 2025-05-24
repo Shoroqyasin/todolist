@@ -66,14 +66,14 @@ export default function Login() {
             Log In
           </button>
         </form>
-        <div className="text-center mt-4">
+        {/* <div className="text-center mt-4">
           <Link
             href="/login/updatepassword"
             className="text-sm text-blue-600 hover:underline"
           >
             Forgot your password?
           </Link>
-        </div>
+        </div> */}
       </div>
     </div>
   );
